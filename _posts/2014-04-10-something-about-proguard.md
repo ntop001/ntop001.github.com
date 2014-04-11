@@ -1,4 +1,11 @@
-#Proguard 混淆选项
+---
+layout: post
+title: "Proguard 混淆的世界"
+description: ""
+category: 
+tags: []
+---
+{% include JB/setup %}
 
 如果你还没有看过，那真是可惜了，糊里糊涂走了那么久 ...
 
