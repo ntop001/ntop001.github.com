@@ -14,6 +14,7 @@ tags: []
 ## 什么是maven
 
 [maven](http://maven.apache.org/index.html) 是一个做软件工程管理的软件，可以用来做工程的构建(build)和发布。对于开发者来说大部分情况下，我们是使用maven来构建系统，比如把工程代码打包发布。这是一个基础并且简单的功能，maven 通过一个配置文件（pom.xml）来配置需要执行的一些命令(比如编译文件、生成jar包、复制文件等等)，类似的工具有很多，现在Gradle也很流行。但是maven的配置文件是基于xml的，这样的语法用起来不是很灵活导致配置文件通常巨大无比。在maven工程中添加一些依赖的时候非常简单，比如：
+
 ```
  <dependency>
     <groupId>com.google.android</groupId>
@@ -170,7 +171,7 @@ gpg: keyserver send failed: keyserver error
 
 现在回到[这个](https://oss.sonatype.org/)页面
 
-![staging](http://central.sonatype.org/images/staging-upload.png)
+<img src="http://central.sonatype.org/images/staging-upload.png" width="600" />
 
 点击左侧的 Staging Upload -> 选择 Artifact(s) with a POM ->先把 .pom 文件上传 ->再在下面的artifact(s) upload 表单中把剩余7个文件上传了，过一会点击左侧的 Staging Repositories 就可搜索刚刚上传的artifact 关键字就可以看到自己上传的东西了。这个[链接](http://central.sonatype.org/pages/manual-staging-bundle-creation-and-deployment.html) 有一些手动签名并上传的信息。 这个时候要看着工程的状态时 Open 的还是 Closed 的，如果是Open的那是不是有什么问题（正常情况下是Closed的，这个时候可以点击Release按钮发布工程）。如果是Closed的点击Release就可以发布了。（如果是第一次，还需要回到提交新工程的那个页面，找到issue下面的comments回复一个告诉帮你审核的人我的工程需要同步到maven central repo）这样jar包就可以同步到 central repo 了。其实关键点还是把工程先提交到 sonatype 接下来的事情就很简单了。
 
