@@ -7,7 +7,7 @@ tags: []
 ---
 {% include JB/setup %}
 
-# Thrift
+# 协议相关的东西
 
 关于协议最开始接触的xml、后来是json，这些都是基于文本的，xml 长得像
 这样
@@ -35,7 +35,7 @@ xml 比较方面人工编辑和阅读但是作为传输协议会使用时会很�
 ```
 就会发现同样的信息使用json协议来表述会很小，所以现在很多移动平台的开发基本都是使用json作为传输协议。而且因为使用文本格式容易调试，这点在看到后面的Thrift和ProtoBuffer的时候就会感觉到了，这些二进制格式的协议都是不可读的，debug的时候非常麻烦。
 
-后来我们还是抛弃了json为了减少带宽json还是太大了，对于友盟的一段普通log，如果json为1K，上面提到的二进制格式大约在0.6K 压缩（deflate）之后大约在 0.7K， 也就是说原来的带宽使用可以一下降低到原来的70% 这个优化还是非常可观的。
+后来我们还是抛弃了json为了减少带宽json还是太大了，对于友盟的一段普通log，thrift的是json的60%，分别压缩之后（deflate）是70%，也就是说原来的带宽使用可以一下降低到原来的70% 这个优化还是非常可观的。
 
 二进制格式协议好多比如MessagePack、BJSON、ProtoBuffer、Thrift、Avro .. MessagePack的主要缺点是扩展性不好，BJSON其实只是把JSON二进制但是没有做任何优化，PB、Thrift、Avro 产生的协议大小都是一个量级的，但是Avro的依赖文件太多库太大（其实Avro与Thrift、PB的工作模式不一样，后两者依赖于自动生成的文件来读取协议，协议越多产生成文件越大，随着协议膨胀这也会变成一个很大的问题），PB在iOS平台上的库也很大，于是选择了Thrift，Thrift 和 PB都是同一帮人写的，原来在Google工作的时候写了PB后来跑到Facebook搞了Thrift，他们的序列化方式和使用方式都是一样的。
 
@@ -84,7 +84,7 @@ Signed | Encoded
 -2     | 3
 2      | ？
 
-规律自己找吧，小数智力题（答案见最后）
+规律自己找吧，小学智力题（答案见最后）
 
 对应的算法就是 `(n << 1) ^ (n >> 31)` 
 
@@ -498,11 +498,13 @@ public class Log implements org.apache.thrift.TBase<Log, Log._Fields>, java.io.S
 
 ```
 Log log = new Log();
-l.setId("123");
-l.setTimestamp(456);
-byte[] data = (new TSerializer()).serialize( log );
+log.setId("123");
+log.setTimestamp(456);
+byte[] data = (new TSerializer()).serialize( log ); //序列化成byte array
 
-new TDeserializer(new TBinaryProtocol.Factory()).deserialize(response, res);
+Log log2 = new Log();
+//解析字节,
+log2 = new TDeserializer(new TCompactProtocol.Factory()).deserialize(response, data);
 ```
 
 这样已经完成了一次最简单的Thrift之旅。
@@ -515,7 +517,7 @@ new TDeserializer(new TBinaryProtocol.Factory()).deserialize(response, res);
 2. 删除重复功能的和用不到的方法
 
 
-按照 `README_Windows.txt` 内容下载 `Flex` 和 `Bison` 并生成相关代码，
+按照 `README_Windows.txt`（下载Thrift Compiler源码之后根目录下有这个文件） 内容下载 `Flex` 和 `Bison` 并生成相关代码，
 上面工程中已经做好了这一步，可以直接到下一步。
 
 ######添加 Android 支持并删除冗余代码
@@ -555,7 +557,5 @@ thrift --gen android thrift.file
 ```
 thrift --gen java:java5 thrift.file
 ```
-
-
 
 答：4
