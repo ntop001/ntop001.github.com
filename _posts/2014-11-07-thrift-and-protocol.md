@@ -49,7 +49,7 @@ Thrift 和 PB 把协议变得更小，主要有两点：
 ```
 message root {
 	required string name = 1;
-	optional list<string> items = 2;
+	repeated list<string> items = 2;
 }
 ```
 这样原来必须在协议中传输的key（eg：name、list）在传输时候转变成 1、2，对于原来很长的key 比如 device_manuid device_manufacturer 这样很长的key优化效果很好。
