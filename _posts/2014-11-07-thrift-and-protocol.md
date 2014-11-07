@@ -7,8 +7,6 @@ tags: []
 ---
 {% include JB/setup %}
 
-# 协议相关的东西
-
 关于协议最开始接触的xml、后来是json，这些都是基于文本的，xml 长得像
 这样
 
