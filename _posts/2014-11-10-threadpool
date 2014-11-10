@@ -1,0 +1,10 @@
+---
+layout: post
+title: "线程池"
+description: "总结SDK中用到的线程池知识"
+category: "知识整理"
+tags: [SDK]
+---
+
+在统计分析SDK里面提供的多数onXXXX() 开头的方法都是异步的，最开始的时候都是直接用线程实现的，用来处理琐碎的任务，然后在丢到
+用Handler的线程池里面
