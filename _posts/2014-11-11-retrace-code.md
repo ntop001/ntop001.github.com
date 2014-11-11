@@ -1,3 +1,11 @@
+---
+layout: post
+title: "Java恢复混淆后的源码信息"
+description: ""
+category: 
+tags: [SDK]
+---
+
 经常有人发邮件问我们一些很奇怪的问题，还会附上一段堆栈代码：
 
 > 为什么友盟统计到的错误堆栈都变成 a.b.c 这样的不可读字符了?
