@@ -65,7 +65,7 @@ public final class R {
 ```
 
 在SDK的代码中每次查找资源id的时候不能再使用 `R.id.xxx` 的方式而是使用 `getId("com.foo.bar", "id", "xxx")` 对于图片类型就是 
-`getId("com.foo.bar", "drawable", "xxx")` 第一个参数包名可以由开发者传入或者通过 `context.getPackageName()` 获取，当然 `context` 也需要开发者传入。但是如果通过 `context.getPackageName()` 获取包名可能会有一个很大的问题，因为在Android中，可以在
+`getId("com.foo.bar", "drawable", "xxx")` 第一个参数包名可以由开发者传入或者通过 `context.getPackageName()` 获取，当然 `context` 也需要开发者传入。但是如果通过 `context.getPackageName()` 获取包名可能会有一个潜在的问题，因为在Android中，可以在
 打包的时候修改 AndroidManifest.xml 中的包名，通过`context.getPackageName()`方式获取的包名和R文件的实际包名并不一致，会导致
 错误。那么就需要看下面这种方式了。
 
@@ -85,6 +85,7 @@ public final class R {
 > name	The name of the desired resource.
 > defType	Optional default resource type to find, if "type/" is not included in the name. Can be null to require an explicit > type.
 > defPackage	Optional default package to find, if "package:" is not included in the name. Can be null to require an explicit > package.
+
 > **Returns**
 > int The associated resource identifier. Returns 0 if no such resource was found. (0 is not a valid resource ID.)
 
