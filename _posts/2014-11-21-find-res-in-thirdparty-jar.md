@@ -88,8 +88,7 @@ public final class R {
 > **Returns**
 > int The associated resource identifier. Returns 0 if no such resource was found. (0 is not a valid resource ID.)
 
-
-整个方法，可以通过资源名，资源类型，包名索引资源id，但是它的实现并不是上面那种反射实现的方式，而是直接解析了底层的资源
+这个方法，可以通过资源名，资源类型，包名索引资源id，但是它的实现并不是上面那种反射实现的方式，而是直接解析了底层的资源
 所以即使在开发者打包的时候修改了包名，也能正确的索引资源。
 
 
