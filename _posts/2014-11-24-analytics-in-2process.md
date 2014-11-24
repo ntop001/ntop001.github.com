@@ -193,7 +193,7 @@ public class Analytics {
 	}
 }
 ```
-`onEvent(String tag)` 和 `onEvent(String tag, String label)` 的实现是比较hacky的，以为在SDK中实际上是以 `tag` 为事件id的，同
+`onEvent(String tag)` 和 `onEvent(String tag, String label)` 的实现是比较hacky的，因为在SDK中实际上是以 `tag` 为事件id的，同
 时把tag作为k-v型事件的一个key，label作为value，如果没有value则传 ""。所以我们这个工具类中定义了这些方法，并通过 `startService`
 方法，把数据传入 `AnalytiServcsService`。
 
@@ -202,7 +202,19 @@ public class Analytics {
 分别用两个Activity来演示，并且这两个Activity生存在不同的进程中，他们的集成代码都是一样的
 
 ```
-  public void onResume(){
+//MainActivity.java
+	public void onResume(){
+		super.onResume();
+		Analytics.getInstance(this).onResume("MainActivity");
+	}
+	@Override
+	protected void onPause() {
+		// TODO Auto-generated method stub
+		super.onPause();
+		Analytics.getInstance(this).onPause("MainActivity");
+	}
+//SecondActivity.java
+  	public void onResume(){
 		super.onResume();
 		Analytics.getInstance(this).onResume("SecondActivity");
 	}
@@ -232,6 +244,8 @@ public class Analytics {
 ```
 
 这么做大概可以实现在不同进程中调用统计分析的代码了，但是如上所见并没有管理Service的声明周期，所以获取还需要适当的时候结束掉Service。
+
+这个例子的代码在这里:https://github.com/ntop001/HelloBigWorld
 
 
 
