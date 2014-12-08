@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Android流水账"
+title: "一次Android项目知识整理"
 description: "知识整理"
 category: 
 tags: [Android]
