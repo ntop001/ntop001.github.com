@@ -261,7 +261,7 @@ Tab也动。
 
 这种 Adapter 是不是看上去很诡异和之前见到的都不一样，这个Adapter并没有实现View的复用而是描述了一次View替换的过程。
 
-一个简单的实现是这样的（没有任何优化的机制）View会不断的创建和销毁。
+一个简单的实现是这样的（没有任何优化的机制，View会不断的创建和销毁）。
 
 ```
 class ProductSnapshotAdapter extends PagerAdapter {
