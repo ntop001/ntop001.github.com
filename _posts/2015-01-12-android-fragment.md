@@ -12,7 +12,8 @@ tags: [Android,Fragment]
  
  > You can think of a fragment as a modular section of an activity, which has its own lifecycle, receives its own input events, and which you can add or remove while the activity is running (sort of like a "sub activity" that you can reuse in different activities). 
  
- ## 构建Fragment
+ 
+## 构建Fragment
  
  Fragment是Android3.0才引入的东西，如果使用的话，需要用Android的兼容包提供的Fragment实现([Support Library](http://developer.android.com/tools/support-library/index.html))
  ,Android兼容包提供了强大的功能，包括以后可能会用到的ActionBar、ViewPager等等现在比较流行的Android设计元素都需要使用兼容包来实现。
@@ -189,7 +190,7 @@ public static class MainActivity extends Activity
  如果Activity需要调用Fragment中的方法，可以直接通过FragmentActivity的 `getSupportFragmentManager().findFragmentById()` 查找到
  相关的Fragment然后调用它的Public方法。
  
- ## Fragment的生命周期
+## Fragment的生命周期
  
  ![Fragment 生命周期](http://developer.android.com/images/activity_fragment_lifecycle.png)
  
@@ -208,6 +209,6 @@ public static class MainActivity extends Activity
  以上内容来自Android文档
  
  1. [Building a Dynamic UI with Fragments](http://developer.android.com/training/basics/fragments/index.html)
- 2. [API Guides](http://developer.android.com/guide/components/fragments.html)
+ 2. [API Guides -> Fragment](http://developer.android.com/guide/components/fragments.html)
  
  
