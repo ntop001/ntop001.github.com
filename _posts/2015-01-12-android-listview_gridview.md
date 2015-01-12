@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Android listview 总结"
+title: "Android listview 和 GridView 总结"
 description: 
 category: "知识整理"
-tags: [Android,ListView]
+tags: [Android,ListView,GridView]
 ---
 
 ListView算是Android开发中使用的最多的纯UI控件，下面会记录一些开发过程中用到的功能。
@@ -186,6 +186,41 @@ class MyAdapter extends BaseAdapter {
 这样给界面上存在的每个Item设置一个 `OnClickListener`，在每次View复用的时候从新设置被点击的View的位置，原理和View复用一样。
 
 
+## GridView相关
 
+处理GridView的技巧和ListView都差不多，只是GridView是没有HeaderView和FooterView的，但是优化的技巧是一样的，做GridView中经常遇到的一个问题是需要设定子View的大小，比如设定子View显示成正方形，但是宽度却要自适应的情况。设定GridView中每个Grid的宽度自适应只要设置如下两个标签就可以了
+
+```
+android:numColumns="4"
+android:stretchMode="columnWidth"
+```
+
+如上设置Grid显示4列，宽度自动拉伸到合适。但是这时候会发现高度变得很奇怪。一个简单的方法是自定义一个正方形的View，作为子View，比如
+
+```
+public class SquareImageView extends ImageView {
+    public SquareImageView(Context context) {
+        super(context);
+    }
+
+    public SquareImageView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public SquareImageView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int width = getMeasuredWidth();
+        setMeasuredDimension(width, width);
+    }
+}
+```
+
+修改ImageView的 `onMeasure` 方法，是他的高度和宽度是同样的值。。。如果你的子View是一个布局，比如`RelativeLayout`只要用相似的方法修改宽高即可。
 
 
