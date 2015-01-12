@@ -116,3 +116,76 @@ class MyAdapter extends BaseAdapter {
 
 对于第二种方式，是目前我在项目中广泛使用的一种，但是对于比较复杂的布局还是无能为力。
 
+给ListView中子控件添加按钮，这个设计很常见，比如微博列表里面中每个Item下面都有“赞”、“评论”和“分享”三个按钮，点击按钮和点击整个ListView的子View触发的是不同的事件。在子View中添加Button的处理响应事件，我看到好多人处理的都很怪异，比如在`getView`函数中new一个OnClick接口。有一种实现可以这样做：
+
+```
+	//布局文件(listitem.xml)
+	<?xml version="1.0" encoding="UTF-8"?>
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent" >
+	
+	    <ImageView
+	        android:id="@+id/add_selector_image"
+	        android:layout_width="fill_parent"
+	        android:layout_height="100dp"
+	        android:scaleType="centerCrop" />
+	
+	    <ImageButton
+	        android:id="@+id/add_selector_check"
+	        android:clickable="false"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:layout_alignParentTop="true"
+	        android:layout_marginRight="3dp"
+	        android:layout_marginTop="3dp"
+	        android:background="@null"/>
+	</RelativeLayout>
+	//代码
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		View view = convertView;
+		ViewHolder vholder = null;
+		if(view == null){
+			view = LayoutInflater.from(context).inflate(R.layout.listitem, null);
+			ViewHolder holder = new ViewHolder();
+			view.setTag(holder);
+			vholder = holder;
+			
+			holder.ImageIamge = (ImageView)view.findViewById(R.id.add_selector_image);
+			holder.ImageCheck = (ImageButton)view.findViewById(R.id.add_selector_check);
+			CheckListener listener = new CheckListener();
+			holder.ImageCheck.setOnClickListener(listener);
+			holder.Listener = listener;
+		}else{
+			vholder = (ViewHolder)view.getTag();
+		}
+		
+		vholder.Listener.Position = position;
+		
+		return view;
+	}
+	
+	class ViewHolder {
+		public ImageView ImageIamge;
+		public ImageButton ImageCheck;
+		public CheckListener Listener;
+	}
+	
+	class CheckListener implements OnClickListener {
+		public int Position;
+		
+		@Override
+		public void onClick(View v) {
+			
+		}
+	}
+```
+
+这样给界面上存在的每个Item设置一个 `OnClickListener`，在每次View复用的时候从新设置被点击的View的位置，原理和View复用一样。
+
+
+
+
+
