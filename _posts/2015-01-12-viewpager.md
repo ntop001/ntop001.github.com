@@ -298,3 +298,9 @@ class ProductSnapshotAdapter extends PagerAdapter {
 ```
 
 TODO:补充ViewPager内部的实现细节
+
+内容来自Android文档：
+
+1. [ViewPager](http://developer.android.com/reference/android/support/v4/view/ViewPager.html)
+2. [PagerAdapter](http://developer.android.com/reference/android/support/v4/view/PagerAdapter.html)
+3. [Creating Swipe Views with Tabs](http://developer.android.com/training/implementing-navigation/lateral.html)
