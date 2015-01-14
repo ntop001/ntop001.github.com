@@ -233,3 +233,20 @@ private Intent getDefaultIntent() {
 
 导航模式有三种 
 
+1. NAVIGATION_MODE_LIST  在ActionBar上会出现一个Spinner，点击之后会有一个下拉的列表
+2. NAVIGATION_MODE_TABS  ActionBar下面会出现一个Tab
+3. NAVIGATION_MODE_STANDARD 标准的导航模式
+
+从Android5.0开始，已经不再鼓励使用导航模式了，所以不再说明。
+
+
+内容来源Android文档：
+
+1. [Actionbar](http://developer.android.com/guide/topics/ui/actionbar.html)
+
+
+关于如何修饰ActionBar的样式，见文档的[最后部分](http://developer.android.com/guide/topics/ui/actionbar.html#Style)。
+
+
+
+
