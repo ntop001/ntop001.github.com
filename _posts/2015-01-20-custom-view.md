@@ -248,7 +248,9 @@ protected void onDraw(Canvas canvas) {
 
 ## 继承ViewGroup
 
-有时候需要实现自定义的布局，大部分情况下需要继承ViewGroup，对于这种情况，需要格外的处理子View的事件，在`onMeasure`方法中手动调用子View的`measure`方法，来触发子View的`onMeasure`方法
+Android中把View分成了两种一种是直接继承自View的比较原子的View类型，比如Button、TextView等等，一种是布局类型，比如LinearLayout、RelativeLayout等等。对于后者需要处理子View的事件分发和绘制问题。在绘制方面父View主要需要触发子View的布局(onLayout)和测量(onMeasure)事件，将这些事件从父View传递到子View。
+
+实现自定义的布局，大部分情况下需要继承ViewGroup，对于这种情况，需要格外的处理子View的事件，在`onMeasure`方法中手动调用子View的`measure`方法，来触发子View的`onMeasure`方法
 
 ```
 @Override
