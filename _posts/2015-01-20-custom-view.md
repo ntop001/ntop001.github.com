@@ -286,6 +286,8 @@ Android中把View分成了两种一种是直接继承自View的比较原子的Vi
     }
 ```
 
+Android文档中提供了一个更全面的例子,见[这里](http://developer.android.com/reference/android/view/ViewGroup.html)。
+
 ## 其他
 
 有的时候只需继承一个现有的View比如 Button就可以实现某些功能，有的时候需要组合其他的多种View，比如AutoCompleteTextView是一个EditText
@@ -296,6 +298,7 @@ Android中把View分成了两种一种是直接继承自View的比较原子的Vi
 
 1. [Custom Components](http://developer.android.com/guide/topics/ui/custom-components.html)
 2. [Creating Custom Views](http://developer.android.com/training/custom-views/index.html)
+3. [ViewGroup](http://developer.android.com/reference/android/view/ViewGroup.html)
 
 
 
