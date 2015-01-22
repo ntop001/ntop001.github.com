@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Android中触摸事件分发"
+title: "Android中触摸事件分发和UI滚动"
 description: ""
 category: "知识整理"
 tags: [Android,Event]
