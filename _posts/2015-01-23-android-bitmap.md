@@ -218,9 +218,206 @@ class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
 
 ## 图片缓存
 
-上述的实现已经非常完美了，截取适合大小的图片，不会占用更多的内存；图片异步加载，不会导致主线程的阻塞。但是如果一个列表来回滚动的话，无数个AsyncTask会被创建出来一次又一次的处理图片，对于CPU的消耗和图片显示速度会有很大的影响。这个时候需要缓存~
+上述的实现已经非常完美了，截取适合大小的图片，不会占用更多的内存；图片异步加载，不会导致主线程的阻塞。但是如果一个列表来回滚动的话，无数个AsyncTask会被创建出来一次又一次的处理图片，对于CPU的消耗和图片显示速度会有很大的影响。这个时候需要缓存把每次已经处理好的图片缓存在内存或者SD卡上，这样下次使用的时候可以直接从缓存中拿到图片而不是每次都去重新读取。
+
+API12提供了`LruCache`(http://developer.android.com/reference/android/util/LruCache.html)类（LRU = Least Recently Used），这种缓存算法每次当一个值被访问的时候都会把这个值移到队列的开始，如果新的值被插入到队列的开始了，就把队列尾部的值移除。为了兼容我们使用SupportV4包中提供的[兼容版本](http://developer.android.com/reference/android/support/v4/util/LruCache.html)。
+
+> The LruCache class (also available in the Support Library for use back to API Level 4) is particularly well suited to the task of caching bitmaps, keeping recently referenced objects in a strong referenced LinkedHashMap and evicting the least recently used member before the cache exceeds its designated size.
+
+默认情况下LruCache的大小是Cache中的值的数量，但是这里需要缓存的是图片，所以需要告诉LruCache新的大小计算方式
+
+```
+   int cacheSize = 4 * 1024 * 1024; // 4MiB
+   LruCache bitmapCache = new LruCache(cacheSize) {
+       protected int sizeOf(String key, Bitmap value) {
+           return value.getByteCount();
+       
+   }}
+```
+
+下面是一段，使用LruCache的示例，使用1/8的内存作为图片的缓存。
+
+```
+private LruCache<String, Bitmap> mMemoryCache;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    ...
+    // Get max available VM memory, exceeding this amount will throw an
+    // OutOfMemory exception. Stored in kilobytes as LruCache takes an
+    // int in its constructor.
+    final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+    // Use 1/8th of the available memory for this memory cache.
+    final int cacheSize = maxMemory / 8;
+
+    mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+        @Override
+        protected int sizeOf(String key, Bitmap bitmap) {
+            // The cache size will be measured in kilobytes rather than
+            // number of items.
+            return bitmap.getByteCount() / 1024;
+        }
+    };
+    ...
+}
+
+public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+    if (getBitmapFromMemCache(key) == null) {
+        mMemoryCache.put(key, bitmap);
+    }
+}
+
+public Bitmap getBitmapFromMemCache(String key) {
+    return mMemoryCache.get(key);
+}
+```
+
+使用起来很简单，在每次处理图片之前先到缓存中看看有没有？有的话就从缓存中直接读取，如果没有的话，就开启一个AsyncTask去加载，在加载完之后，要记得把图片放入缓存。
+
+```
+public void loadBitmap(int resId, ImageView imageView) {
+    final String imageKey = String.valueOf(resId);
+
+    final Bitmap bitmap = getBitmapFromMemCache(imageKey);
+    if (bitmap != null) {
+        mImageView.setImageBitmap(bitmap);
+    } else {
+        mImageView.setImageResource(R.drawable.image_placeholder);
+        BitmapWorkerTask task = new BitmapWorkerTask(mImageView);
+        task.execute(resId);
+    }
+}
+
+class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
+    ...
+    // Decode image in background.
+    @Override
+    protected Bitmap doInBackground(Integer... params) {
+        final Bitmap bitmap = decodeSampledBitmapFromResource(
+                getResources(), params[0], 100, 100));
+        addBitmapToMemoryCache(String.valueOf(params[0]), bitmap);
+        return bitmap;
+    }
+    ...
+}
+```
+
+但是仅仅缓存在内存中还是有缺点的，如果图片是服务器上下载的那么App关闭之后再打开还需要重新下载，如果List加载的图片太多，内存中的缓存很容易就满了。所以还需要把图片在SD卡上也缓存一份。文档上使用的一个实现[DiskLruCache](https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/io/DiskLruCache.java)。
+
+1. 初始化磁盘缓存（磁盘操作使用了异步线程）
+2. 在AsyncTask中加载图片的时候先查询磁盘，是否有缓存？有就直接读取，没有则加载图片并同时放入内存和磁盘缓存
+
+```
+private DiskLruCache mDiskLruCache;
+private final Object mDiskCacheLock = new Object();
+private boolean mDiskCacheStarting = true;
+private static final int DISK_CACHE_SIZE = 1024 * 1024 * 10; // 10MB
+private static final String DISK_CACHE_SUBDIR = "thumbnails";
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    ...
+    // Initialize memory cache
+    ...
+    // Initialize disk cache on background thread
+    File cacheDir = getDiskCacheDir(this, DISK_CACHE_SUBDIR);
+    new InitDiskCacheTask().execute(cacheDir);
+    ...
+}
+
+// 初始化DiskCache
+class InitDiskCacheTask extends AsyncTask<File, Void, Void> {
+    @Override
+    protected Void doInBackground(File... params) {
+        synchronized (mDiskCacheLock) {
+            File cacheDir = params[0];
+            mDiskLruCache = DiskLruCache.open(cacheDir, DISK_CACHE_SIZE);
+            mDiskCacheStarting = false; // Finished initialization
+            mDiskCacheLock.notifyAll(); // Wake any waiting threads
+        }
+        return null;
+    }
+}
+//加载图片的时候先查询磁盘缓存
+class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
+    ...
+    // Decode image in background.
+    @Override
+    protected Bitmap doInBackground(Integer... params) {
+        final String imageKey = String.valueOf(params[0]);
+
+        // Check disk cache in background thread
+        Bitmap bitmap = getBitmapFromDiskCache(imageKey);
+
+        if (bitmap == null) { // Not found in disk cache
+            // Process as normal
+            final Bitmap bitmap = decodeSampledBitmapFromResource(
+                    getResources(), params[0], 100, 100));
+        }
+
+        // Add final bitmap to caches
+        addBitmapToCache(imageKey, bitmap);
+
+        return bitmap;
+    }
+    ...
+}
+//新的图片同时加入内存和磁盘缓存
+public void addBitmapToCache(String key, Bitmap bitmap) {
+    // Add to memory cache as before
+    if (getBitmapFromMemCache(key) == null) {
+        mMemoryCache.put(key, bitmap);
+    }
+
+    // Also add to disk cache
+    synchronized (mDiskCacheLock) {
+        if (mDiskLruCache != null && mDiskLruCache.get(key) == null) {
+            mDiskLruCache.put(key, bitmap);
+        }
+    }
+}
+//辅助方法，从磁盘缓存中读取图片
+public Bitmap getBitmapFromDiskCache(String key) {
+    synchronized (mDiskCacheLock) {
+        // Wait while disk cache is started from background thread
+        while (mDiskCacheStarting) {
+            try {
+                mDiskCacheLock.wait();
+            } catch (InterruptedException e) {}
+        }
+        if (mDiskLruCache != null) {
+            return mDiskLruCache.get(key);
+        }
+    }
+    return null;
+}
+
+// Creates a unique subdirectory of the designated app cache directory. Tries to use external
+// but if not mounted, falls back on internal storage.
+public static File getDiskCacheDir(Context context, String uniqueName) {
+    // Check if media is mounted or storage is built-in, if so, try and use external cache dir
+    // otherwise use internal cache dir
+    final String cachePath =
+            Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) ||
+                    !isExternalStorageRemovable() ? getExternalCacheDir(context).getPath() :
+                            context.getCacheDir().getPath();
+
+    return new File(cachePath + File.separator + uniqueName);
+}
+```
+
+需要注意的是，所以的磁盘操作都是放在异步线程中的，在查询内存缓存的时候，直接在UI线程中完成的，但是在查询磁盘缓存的时候，这个过程放在了AsyncTask里面。
 
 
+PS: 其实对于上面的各种策略，网上已经有现成的而且实现的非常好的库可供使用，自己看看可能对理解这些缓存和图片处理方式更有帮助吧。
 
+1. [Volley](http://developer.android.com/training/volley/index.html) 封装了网络请求队列和图片加载缓存功能
+2. [Universal Image Loader](https://github.com/nostra13/Android-Universal-Image-Loader) 一个纯粹的图片加载和缓存框架（有一些额外的功能，比如图片圆角之类）
+3. [Picasso](http://square.github.io/picasso/) 另一个非常强大的图片下载和缓存库
 
+内容来源：
 
+1. [Displaying Bitmaps Efficiently](http://developer.android.com/training/displaying-bitmaps/index.html)
+2. [LruCache](http://developer.android.com/reference/android/util/LruCache.html)
+2. [DiskLruCache](https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/io/DiskLruCache.java)
