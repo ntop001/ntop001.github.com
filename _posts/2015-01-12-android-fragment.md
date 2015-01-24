@@ -205,10 +205,54 @@ public static class MainActivity extends Activity
  
  关于Fragment栈完全是由宿主的Activity管理的，如果Activity销毁了，那么她里面包含的所有Fragment都会销毁，一般情况下如果不调用
  `transaction.addToBackStack` 方法，这个栈就是空的。
+
+PS:最近在看图片内存管理的时候发现Fragment的生命周期在设置`setRetainInstance()`后会发生变化。一般情况下，如果Activity重新创建了，会导致Fragment也重新创建，但是在有些情况下比如屏幕旋转Activity立刻回被重新创建(调用onCreate方法)，但是这时候可以通过给Fragment配置`setRetainInstance(true)` 这样Fragment就不会被销毁，在使用的时候可以从FragmentManager中重新找回这个Fragment，这样避免了回收内存又再次申请内存，App可能会更快吧。
+
+```
+private LruCache<String, Bitmap> mMemoryCache;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    ...
+    RetainFragment retainFragment =
+            RetainFragment.findOrCreateRetainFragment(getFragmentManager());
+    mMemoryCache = retainFragment.mRetainedCache;
+    if (mMemoryCache == null) {
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            ... // Initialize cache here as usual
+        }
+        retainFragment.mRetainedCache = mMemoryCache;
+    }
+    ...
+}
+
+class RetainFragment extends Fragment {
+    private static final String TAG = "RetainFragment";
+    public LruCache<String, Bitmap> mRetainedCache;
+
+    public RetainFragment() {}
+
+    public static RetainFragment findOrCreateRetainFragment(FragmentManager fm) {
+        RetainFragment fragment = (RetainFragment) fm.findFragmentByTag(TAG);
+        if (fragment == null) {
+            fragment = new RetainFragment();
+            fm.beginTransaction().add(fragment, TAG).commit();
+        }
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+}
+```
  
  以上内容来自Android文档
  
  1. [Building a Dynamic UI with Fragments](http://developer.android.com/training/basics/fragments/index.html)
  2. [API Guides -> Fragment](http://developer.android.com/guide/components/fragments.html)
+ 3. [Handle Configuration Changes](http://developer.android.com/training/displaying-bitmaps/cache-bitmap.html#config-changes)
  
  
