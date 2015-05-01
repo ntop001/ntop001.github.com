@@ -6,7 +6,7 @@ category:
 tags: []
 ---
 
-记录安装Django的过程和遇到的一些坑
+记录安装Django的过程和基本概念
 
 ## Python 2.x VS Python 3.x
 
@@ -203,6 +203,7 @@ datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
  <link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" />
  ```
 
+## 表单
 
 
 
