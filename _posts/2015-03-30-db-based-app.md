@@ -27,6 +27,7 @@ What's wrong with this approach ?
 这里提供了三种实现 REST-ful API 的方式，但是大同小异，重要的是掌握其中的精髓。
 
 * Use a Service API
+
   ![](https://raw.githubusercontent.com/ntop001/ntop001.github.com/master/_img/rest2.png)
 * Use the ContentProvider API
   ![](https://raw.githubusercontent.com/ntop001/ntop001.github.com/master/_img/rest4.png)
