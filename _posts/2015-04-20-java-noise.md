@@ -1,3 +1,12 @@
+
+---
+layout: post
+title: "Java的一些冷知识"
+description: ""
+category: 
+tags: []
+---
+
 ### What's the reason I can't create generic array types in Java?
 
 private T[] elements = new T[initialCapacity];
