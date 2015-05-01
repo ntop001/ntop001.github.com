@@ -180,6 +180,7 @@ datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
 所以上面的目录大约是这样
 
 1. polls/templates/polls/index.html 使用： render(request, 'polls/index.html', {'latest_question_list': latest_question_list})
+ 
  ```
  {% if latest_question_list %}
     <ul>
