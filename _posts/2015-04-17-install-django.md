@@ -100,6 +100,22 @@ class Choice(models.Model):
 
 Django里面有一个概念叫 `migration` 它记录了对于Model的变动（方便操作数据库），每次Model发生了变化都可以调用命令记录下来，比如上面 `python manage.py makemigrations polls` 这时候会生成一个文件记录了这次变动 `polls/migrations/0001_initial.py` 通过执行 `python manage.py migrate` 就可以把所有的变动对应的数据结构构造出来。这是一个非常牛逼的功能，这样就不需要每次变动Model的时候都重新建表建数据库。
 
+## admin site
+
+AdminSite是一个非常有用的功能，比如每个网站除了一般的用户之外，必然还有一个可以直接修改数据库的网站管理员，而AdminSit就是给管理员使用的页面。要使用这个功能要先创建一个超级用户，然后打开`http://xxxx/admin` 输入刚刚创建超级用户时候的用户名和密码就可以登陆管理员后台了。
+
+```
+>python manage.py createsuperuser
+... Username: admin
+... Email address: admin@example.com
+... Password: **********
+... Password (again): *********
+... Superuser created successfully.
+```
+
+打开 `http://xxxx/admin` 管理员后台之后可以看到数据库报表，默认的有 Groups 和 Users 表，出现这两个表是因为启用了用户系统，如果以后开启了用户登陆/退出的功能，还会再际会这两张表。
+
+
 ## 其他常用的命令
 
 1.python manage.py sqlmigrate polls 0001
@@ -172,38 +188,3 @@ datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
 >>> Question.objects.all()
 [<Question: Question object>]
 ```
-
-## 模板
-
-在App的目录下，可以新建一个文件夹 `templates` 可以用来存放App使用的模板文件，Django 默认会在这文件夹下寻找模板，同样，Django也会默认在 `static` 文件夹下查找使用的css，js等文件。
-
-所以上面的目录大约是这样
-
-1. polls/templates/polls/index.html 使用： render(request, 'polls/index.html', {'latest_question_list': latest_question_list})
- 
- ```
- {% if latest_question_list %}
-    <ul>
-    {% for question in latest_question_list %}
-        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
-    {% endfor %}
-    </ul>
- {% else %}
-    <p>No polls are available.</p>
- {% endif %}
- ```
-2. polls/static/polls/style.css 
- ```
- li a {
-    color: green;
- }
- 
- //use: polls/templates/polls/index.html
- {% load staticfiles %}
- <link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" />
- ```
-
-## 表单
-
-
-
