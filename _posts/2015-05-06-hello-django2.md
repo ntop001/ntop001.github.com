@@ -80,20 +80,20 @@ views中定义的请求处理方法，都会有一个输入参数 `request` 包�
 
 模板在Django中属于View层，它定义了网页的展示效果，在App的目录下，可以新建一个文件夹 `templates`用来存放App使用的模板文件，Django 默认会在这文件夹下寻找模板，同样，Django也会默认在 `static` 文件夹下查找使用的css，js等文件。
 
-所以上面的目录大约是这样
+所以上面的目录大约是这样(因为Github会解析`{%%}所以把%替换成了@符号号)
 
 1. polls/templates/polls/index.html 使用： render(request, 'polls/index.html', {'latest_question_list': latest_question_list})
  
  ```
- {% if latest_question_list %}
+ {@ if latest_question_list @}
     <ul>
-    {% for question in latest_question_list %}
+    {@ for question in latest_question_list @}
         <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
-    {% endfor %}
+    {@ endfor @}
     </ul>
- {% else %}
+ {@ else @}
     <p>No polls are available.</p>
- {% endif %}
+ {@ endif @}
  ```
 2. polls/static/polls/style.css 
 
@@ -103,8 +103,8 @@ views中定义的请求处理方法，都会有一个输入参数 `request` 包�
  }
  
  //use: polls/templates/polls/index.html
- {% load staticfiles %}
- <link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" />
+ {@ load staticfiles @}
+ <link rel="stylesheet" type="text/css" href="{@ static 'polls/style.css' @}" />
  ```
 
 ## 表单
