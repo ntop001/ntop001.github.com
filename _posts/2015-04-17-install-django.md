@@ -113,7 +113,7 @@ AdminSite是一个非常有用的功能，比如每个网站除了一般的用�
 ... Superuser created successfully.
 ```
 
-打开 `http://xxxx/admin` 管理员后台之后可以看到数据库报表，默认的有 Groups 和 Users 表，出现这两个表是因为启用了用户系统，如果以后开启了用户登陆/退出的功能，还会再际会这两张表。
+打开 `http://xxxx/admin` 管理员后台之后可以看到数据库报表，默认的有 Groups 和 Users 表，出现这两个表是因为启用了用户系统，如果以后开启了用户登陆/退出的功能，还会再际会这两张表。但是我们自己定义的模型不会出现在这里，要把这些模型注册到adminsite才行，见[**这里**](https://docs.djangoproject.com/en/1.8/intro/tutorial02/)
 
 
 ## 其他常用的命令
