@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Hello Django 3"
+title: "Hello Django 3 用户系统"
 description: "用户系统"
 category: 
 tags: [Django]
