@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Hello Django 2"
+title: "Hello Django 2 Django App 的基本架构"
 description: "model,view,controller"
 category:
 tags: [Django]
