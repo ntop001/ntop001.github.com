@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Hello Django"
+title: "Hello Django 0 安装和Helloworld"
 description: ""
 category: 
 tags: []
