@@ -27,8 +27,13 @@ Password:
 2015-06-07T20:13:11.932+0800 I JOURNAL  [initandlisten] journal dir=/data/db/journal
 2015-06-07T20:13:11.933+0800 I JOURNAL  [initandlisten] recover : no journal files present, no recovery needed
 ....
+2015-06-07T20:13:11.946+0800 I CONTROL  [initandlisten] MongoDB starting : pid=966 port=27017 dbpath=/data/db 64-bit host=ntopdeMacBook-Pro.local
+....
 2015-06-07T20:13:12.038+0800 I NETWORK  [initandlisten] waiting for connections on port 27017
 ```
+
+"2015-06-07T20:13:11.946+0800 I CONTROL  [initandlisten] MongoDB starting : pid=966 port=27017 dbpath=/data/db 64-bit host=ntopdeMacBook-Pro.local" 这条log打印了数据库的位置，端口号，host地址等信息。
+
 
 ## 连接数据库
 
@@ -54,7 +59,7 @@ Server has startup warnings:
 > 
 ```
 
-这时候会发现mongod控制台打印了一条消息,表示已经有连接连到数据库。
+这时候会发现mongod控制台打印了一条消息,表示已经有连接连到数据库。"connecting to: test" 这条标示连接到test数据库。
 
 ```
 2015-06-07T20:22:50.321+0800 I NETWORK  [initandlisten] connection accepted from 127.0.0.1:52416 #1 (1 connection now open)
@@ -75,6 +80,8 @@ WriteResult({ "nInserted" : 1 })
 //查询表的所有内容
 > db.blogs.find()
 { "_id" : ObjectId("55743ce6b190d00add1e057e"), "title" : "hello", "content" : "world" }
+//创建一个数据库 fb
+> use fb
 ```
 
 ## MongoEngine
@@ -83,7 +90,17 @@ WriteResult({ "nInserted" : 1 })
 
 确切的说我现在做的工程是这样的：Django + MongoEngine + MongoDB
 
-安装MongoEngine很简单，使用Python的包管理工具PIP只需要一条命令 `pip install mongoengine`
+安装MongoEngine很简单，使用Python的包管理工具PIP只需要一条命令 `pip install mongoengine`。需要注意的是MongoEngine是依赖于PyMongo的，也要安装一下pymongo `pip install pymongo`。
+
+> 注意版本问题，我在使用MongoEngine（0.9.0）的时候它还不能支持>=3.0版本的pymongo，[github 上的回答](https://github.com/MongoEngine/mongoengine/issues/935)要安装2.8版本的pymongo。
 
 ## MongoEngine基本使用
 
+连接数据库
+
+```
+>>> from mongoengine import connect
+>>> connect('fb')
+MongoClient('localhost', 27017)
+>>> 
+```
