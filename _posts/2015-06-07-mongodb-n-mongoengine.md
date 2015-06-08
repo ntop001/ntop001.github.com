@@ -96,11 +96,51 @@ WriteResult({ "nInserted" : 1 })
 
 ## MongoEngine基本使用
 
-连接数据库
+写了一小段代码 'test.py' ,演示一个hello world的使用。 
 
 ```
->>> from mongoengine import connect
->>> connect('fb')
-MongoClient('localhost', 27017)
->>> 
+➜  mongoenginetest  cat test.py 
+from mongoengine import *
+
+// 连接到前面的fb数据库
+connect('fb')
+//定义一个ORM文档
+class Blog(Document):
+	title = StringField(required=True)
+	content = StringField(required=True)
+//实例化一个文档并保存
+b = Blog()
+b.title = 'deep into python'
+b.content = 'python is not a good program lang'
+
+b.save()
+//从数据库读回数据
+for blog in Blog.objects:
+	print b.title
+```
+
+上面一段代码，连接到了fb数据库，然后定义一个Blog对象，实例化后保存到数据库。如果这时候打开mongo控制台，连接到我们的数据库，可以看到刚刚保存的结果。
+
+```
+➜  ~  mongo
+MongoDB shell version: 3.0.3
+connecting to: test
+Server has startup warnings: 
+2015-06-08T17:12:32.178+0800 I CONTROL  [initandlisten] ** WARNING: You are running this process as the root user, which is not recommended.
+2015-06-08T17:12:32.178+0800 I CONTROL  [initandlisten] 
+2015-06-08T17:12:32.178+0800 I CONTROL  [initandlisten] 
+2015-06-08T17:12:32.178+0800 I CONTROL  [initandlisten] ** WARNING: soft rlimits too low. Number of files is 256, should be at least 1000
+> show dbs
+fb     0.078GB
+local  0.078GB
+test   0.078GB
+> use fb
+switched to db fb
+> show collections
+blog
+op
+system.indexes
+> db.blog.find()
+{ "_id" : ObjectId("55755c83984e3606ce87b488"), "title" : "deep into python", "content" : "python is not a good program lang" }
+> 
 ```
