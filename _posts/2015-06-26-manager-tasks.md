@@ -1,3 +1,13 @@
+---
+layout: post
+title: "Android Task 管理"
+description: ""
+category: 
+tags: []
+---
+
+
+
 http://www.slideshare.net/RanNachmany/manipulating-android-tasks-and-back-stack
 
 
