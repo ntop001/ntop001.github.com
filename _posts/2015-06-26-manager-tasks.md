@@ -6,7 +6,7 @@ category:
 tags: [Android,Task]
 ---
 
-一般情况下，程序员很少会关心Task的运行，最近也是业务需求才多看了一些。主要内容来自这个[PPT](http://www.slideshare.net/RanNachmany/manipulating-android-tasks-and-back-stack). 这个项目的AndroidSDK，里面存在太多的内存泄露，泄露点非常多，而且代码比较冗杂，改起来比较麻烦所以想了一个取巧的办法，在后台隐藏一个透明的Activity做载体，每次需要用到Activity的时候都把这个Activity供出来，同时把这个Activity做成 “单例” 这样即使泄露也只会泄露一个Activity。
+一般情况下，程序员很少会关心Task的运行，最近也是业务需求才多看了一些。主要内容来自这个[PPT](http://www.slideshare.net/RanNachmany/manipulating-android-tasks-and-back-stack). 最近接手了分享的 Android SDK，里面存在太多的内存泄露，泄露点非常多，而且代码比较冗杂，改起来比较麻烦所以想了一个取巧的办法，在后台隐藏一个透明的Activity做载体，每次需要用到Activity的时候都把这个Activity供出来，同时把这个Activity做成 “单例” 这样即使泄露也只会泄露一个Activity。
 
 基于上面的需求我的代理Activity需要有如下功能，
 
@@ -85,50 +85,7 @@ C(task#0),A(task#0),B(task#1),  队列顺序发生变化，B 进入新的Task，
 
 下面记录几种情况
 
-1. 父 Activity 调用 startActivityForResult 然后finish， sub-activity 不会回调 onActivityResult 方法。
-2. 父 Activity 调用 startActivityForResult，然后调用 moveTaskToBack， 子Activity回调onActivityResult的同时会把父Activity带回前台。（栈的顺序变化）
-如果 sub-activity 是新的任务，那么父Activity调用 moveTaskToBack 后也不会执行 onActivityResult。
-如果父Activity自己是单例，那么它用 startActivityForResult 启动的Activity会嵌入到自己的Task中，如果是 startActivity 方式，那么会建立新的Task
-
-
-
-
-
-
-
-
-Q3
-
-测试 Activity 被回收的情况下，对话框显示是否正常，被回收的Activity是否还可以使用
-
-在有显示对话框的Activity中直接关闭Activity是没有问题的，Activity会先关闭对话框再关闭自己。但是如果Activity被系统回收或者是通过其他方式关闭了，会导致Activity的窗口泄漏。
-
-06-29 05:02:35.563: E/WindowManager(2793): android.view.WindowLeaked: Activity com.example.managetask.ActivityHello has leaked window com.android.internal.policy.impl.PhoneWindow$DecorView{fa91d70 V.E..... R......D 0,0-729,360} that was originally added here
-
-所幸程序不会崩溃。
-
-如果用WeakReference引用Activity，那么在没有GC前都是可以拿到Activity实例的，但是调用 isFinishing or isDestroyed 方法就会发现，实例已经回收。
-
-如果Activity没有回收，那么是可以操作Activity的API，比如在这个Activity上显示对话框，虽然并看到不到这个Activity。但是跳转回来的时候，会发现他又对话框。
-
-是否可以利用回收的Activity做事情？
-
-用已经回收的Activity显示对话框会 leakwindow （runOnUiThread(Runnable{ new Dialog().show()})）但是程序不会崩溃。
-可以用 leakActivity显示一个Toast
-可以启动 启动一个Activity （startActivity(Intent)）
-可以操作UI
-
-
-
-
-Q4 
-
-静态引用
-AsyncTask 线程引用
-activity.getSystemService(“”) cause memory leaks 系统服务
-Toast 也会 https://code.google.com/p/android/issues/detail?id=1770
-
-Q5
-
-
-PS：Android 5.1 系统
+1. 父 Activity 调用 startActivityForResult 然后finish，onActivityResult 方法不会被执行。
+2. 父 Activity 调用 startActivityForResult，然后调用 moveTaskToBack，onActivityResult会被执行，同时会把父Activity带回前台。（栈的顺序变化）
+3. 如果 sub-activity 是新的任务，那么父Activity调用 moveTaskToBack 后也不会执行 onActivityResult。
+4. 如果父Activity自己是单例，那么它用 startActivityForResult 启动的Activity会嵌入到自己的Task中，如果是 startActivity 方式，那么会建立新的Task。
