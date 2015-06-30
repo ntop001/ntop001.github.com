@@ -44,20 +44,6 @@ Toast.makeText(this, "出错啦！", Toast.LENGTH_SHORT).show();
 `Toast` 的第一个参数是 `Context`，大多数时候我们会像上面那样使用，但是很少会出现内存泄漏，但是如果在 `onDestroy()` 方法里面调用就会发现在很短的一段时间（几秒）Activity是泄漏的，原因是 `Toast.makeText` 方法持有了Activity（没有看源码，感觉Toast消失后就会释放Activity所以一般不会有太大的问题，为了安全起见最好还是传入 Applicaton Context）。
 
 
-如果在当前Activity显示一个对话框，对话框上有个按钮可以直接调用 `finish()` 关闭Activity，这样是没有问题的，
-Activity会先关闭对话框再关闭自己。
-
-如果一个Activity正在显示一个对话框但是不再前台，而我们通过其他的方法调用了`finish`方法（或者系统回收或者是通过其他方式关闭了），这样会导致Activity的窗口泄漏。
-
-```
-06-29 05:02:35.563: E/WindowManager(2793): android.view.WindowLeaked: Activity   com.example.managetask.ActivityHello has leaked window com.android.internal.policy.impl.PhoneWindow$DecorView{fa91d70 V.E..... R......D 0,0-729,360} that was originally added here
-```
-所幸程序不会崩溃。
-
-如果用WeakReference引用Activity，那么在没有GC前都是可以拿到Activity实例的，但是调用 isFinishing or isDestroyed 方法就会发现，实例已经回收。
-
-如果Activity没有回收，那么是可以操作Activity的API，比如在这个Activity上显示对话框，虽然并看到不到这个Activity。但是跳转回来的时候，会发现他又对话框。
-
 ```
 LocationManager mLocationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
 ```
@@ -136,7 +122,17 @@ public void foo(Activity activity){
 
 以上说的都是在 Android 5.0 上做的实验。
 
-自用：在有显示对话框的Activity中直接关闭Activity是没有问题的，Activity会先关闭对话框再关闭自己。但是如果Activity被系统回收或者是通过其他方式关闭了，会导致Activity的窗口泄漏。
+如果在当前Activity显示一个对话框，对话框上有个按钮可以直接调用 `finish()` 关闭Activity，这样是没有问题的，
+Activity会先关闭对话框再关闭自己。
 
+如果一个Activity正在显示一个对话框但是不再前台，而我们通过其他的方法调用了`finish`方法（或者系统回收或者是通过其他方式关闭了），这样会导致Activity的窗口泄漏。
 
+```
+06-29 05:02:35.563: E/WindowManager(2793): android.view.WindowLeaked: Activity   com.example.managetask.ActivityHello has leaked window com.android.internal.policy.impl.PhoneWindow$DecorView{fa91d70 V.E..... R......D 0,0-729,360} that was originally added here
+```
+所幸程序不会崩溃。
+
+如果用WeakReference引用Activity，那么在没有GC前都是可以拿到Activity实例的，但是调用 isFinishing or isDestroyed 方法就会发现，实例已经回收。
+
+如果Activity没有回收，那么是可以操作Activity的API，比如在这个Activity上显示对话框，虽然并看到不到这个Activity。但是跳转回来的时候，会发现他又对话框。
 
