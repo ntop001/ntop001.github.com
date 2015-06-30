@@ -1,112 +1,142 @@
-https://github.com/ntop001/ntop001.github.com/edit/master/_posts/
-http://www.slideshare.net/RanNachmany/manipulating-android-tasks-and-back-stack
+---
+layout: post
+title: "Android内存泄漏"
+description: ""
+category: 
+tags: []
+---
+
+老生常谈的话题，但是真正写代码的时候又很少有人能够认真对待。就拿[上篇](http://ntop001.github.io/2015/06/26/manager-tasks/)开始提到的分享SDK来说，各种内存泄漏，已经无语，所以写代码的时候还是要自己认真注意，而不是嘴上说说。
+
+在考虑内存泄漏之前，先看一个问题，为什么Android码农爱持有Activity，在我们SDK中的绝大多数时候是用来显示对话框的（99.9%），其次有小部分是因为我们SDK依赖的第三方SDK需要。
+
+## 被回收的Activity还可以做什么？
+
+这里所指的回收是指Activity被从栈中移除，已经调用了 `onDestroy()` 方法。如果调用 `isFinishing()` 方法会返回 `true`。但是Activity的引用还被持有且不为空。
+
+1. 用已经回收的Activity显示对话框会 leakwindow （runOnUiThread(Runnable{ new Dialog().show()})）但是程序不会崩溃，对话框也不会真的显示出来。
+2. 可以用 leakActivity 显示一个Toast
+3. 可以启动 启动一个Activity （startActivity(Intent)）
+4. 可以操作UI,但是因为Activity已经回收了，导致没有效果。
+5. 可以通过 leakActivity.getApplicationContext() 获取一个真正的Context
+
+一个被回收的Activity还是可以做很多事情的，但是UI相关的东西基本上处于无用状态，所以对于大部分只是为了操作UI（比如显示对话框）而强引用了一个Activity其实并无卵用，这时使用WeakReference持有Activity已经足够，在Activity还在的时候做该做的事情，在它回收的时候也失去了UI操作的能力。
+
+后来我在SDK加了很多这样的代码
+
+```
+//mActivity 是若引用
+Activity activity = mActivity.get();
+if( activity != null && activity.isFinishing() ) {
+ //do something
+}
+```
+
+## 典型的内存泄漏
+
+在修bug的时候就不断的感慨我们已经把市面上的所有泄漏类型都涵盖了。。。sigh
+
+```
+Toast.makeText(this, "出错啦！", Toast.LENGTH_SHORT).show();
+//Toast.makeText(MyActivity.this, "出错啦！", Toast.LENGTH_SHORT).show();
+```
+
+`Toast` 的第一个参数是 `Context`，大多数时候我们会像上面那样使用，但是很少会出现内存泄漏，但是如果在 `onDestroy()` 方法里面调用就会发现在很短的一段时间（几秒）Activity是泄漏的，原因是 `Toast.makeText` 方法持有了Activity（没有看源码，感觉Toast消失后就会释放Activity所以一般不会有太大的问题，为了安全起见最好还是传入 Applicaton Context）。
 
 
-两个问题
+如果在当前Activity显示一个对话框，对话框上有个按钮可以直接调用 `finish()` 关闭Activity，这样是没有问题的，
+Activity会先关闭对话框再关闭自己。
 
-半透明Activity出现在Recent列表，用户体验差
+如果一个Activity正在显示一个对话框但是不再前台，而我们通过其他的方法调用了`finish`方法（或者系统回收或者是通过其他方式关闭了），这样会导致Activity的窗口泄漏。
 
-
-
-
-通过Back/空白区域关闭ShareBoard的时候需要关闭Activity
-点击Home键的时候需要关闭Activity取消操作过程，以免Activity出现在Recent列表中
-
-dumpsys activity recents 打印最近任务
-dumpsys activity activities 当前Activity task 
-dumpsys activity processes
-
-
-测试点
-
- Q1.startActivityForResult 之后，子Activity是新的任务还是和父Activity在一个任务中
-
-使用 FLAG_ACTIVITY_NEW_TASK 和 taskAffinity 标记的Activity还会成为新的Task，但是使用SingleInstance标记的Activity 和父Activity在同一个Task中。如果使用  SingleTask 标记的话，会发现所有Activity都在一个Task中。
-
-
-同时，如果被启动的sub-Activity真的运行在新的Task中了，那么这也会产生问题，onActivityResult 方法会立即执行（在sub-Activity运行之前）。
-
-父 Activity 调用 startActivityForResult 然后finish， sub-activity 不会回调 onActivityResult 方法。
-父 Activity 调用 startActivityForResult，然后调用 moveTaskToBack， 子Activity回调onActivityResult的同时会把父Activity带回前台。（栈的顺序变化）
-如果 sub-activity 是新的任务，那么父Activity调用 moveTaskToBack 后也不会执行 onActivityResult。
-如果父Activity自己是单例，那么它用 startActivityForResult 启动的Activity会嵌入到自己的Task中，如果是 startActivity 方式，那么会建立新的Task
-
-
-
- Q2. 如果一个App有两个任务，Recent 中查看到的是一个还是两个 ？可否把新的任务中的Task从Recent重移除，excludeRecent 怎么使用 ？
-
-Android 中的 FLAG_ACTIVITY_NEW_TASK 并不会启动新的Task，除非添加了 taskAffinity 
-
- 标签。两个Task都会出现在Android的Recent中(必须添加taskAffinity才能出现在Recent中，否则还是会和原App绑定一起
-
- )，可以使用 excludeFromRecents
-
- 隐藏起来。
-
-
-
-使用 launchMode = “singleInstance”  标记的Activity会启动一个新的Task，而这个Task中只有一个Activity，就是自己。而且会发生奇妙的事情。
-
-A, B( singleInstance，excludeFromRecents= true ),C 	启动顺序 ： A -> B -> C
-
-启动B的时候查看Recents会发现Recent为空。。。然后启动C，查看Task列表会发现
-
-C(task#0),A(task#0),B(task#1),  队列顺序发生变化，B 进入新的Task，C 回到原来的Task，并且把这个Task的其他Activity拍到了B的前面。这时候Back键后退，会发现顺序是：  C -> A -> B .
-
-避免上面奇怪现象的发生，可以同时给B设置 ( singleInstance，excludeFromRecents= true, taskAffinity ) 这样，会先分离出来B为独立Task，然后通过 excludeFromRecents 可以隐藏掉。
-
-
-
-dumpsys 使用
-
-
-正常的3各：Running activities (most recent first):
-      TaskRecord{2c048081 #4 A=com.example.managetask U=0 sz=3}
-
-        Run #2: ActivityRecord{3a7134b0 u0 com.example.managetask/.ActivityWorld t4}
-
-        Run #1: ActivityRecord{257fac0a u0 com.example.managetask/.ActivityHello t4}
-
-        Run #0: ActivityRecord{6f882dc u0 com.example.managetask/.MainActivity t4}
-
-
-
-
-
-
-
-Q3
-
-测试 Activity 被回收的情况下，对话框显示是否正常，被回收的Activity是否还可以使用
-
-在有显示对话框的Activity中直接关闭Activity是没有问题的，Activity会先关闭对话框再关闭自己。但是如果Activity被系统回收或者是通过其他方式关闭了，会导致Activity的窗口泄漏。
-
-06-29 05:02:35.563: E/WindowManager(2793): android.view.WindowLeaked: Activity com.example.managetask.ActivityHello has leaked window com.android.internal.policy.impl.PhoneWindow$DecorView{fa91d70 V.E..... R......D 0,0-729,360} that was originally added here
-
+```
+06-29 05:02:35.563: E/WindowManager(2793): android.view.WindowLeaked: Activity   com.example.managetask.ActivityHello has leaked window com.android.internal.policy.impl.PhoneWindow$DecorView{fa91d70 V.E..... R......D 0,0-729,360} that was originally added here
+```
 所幸程序不会崩溃。
 
 如果用WeakReference引用Activity，那么在没有GC前都是可以拿到Activity实例的，但是调用 isFinishing or isDestroyed 方法就会发现，实例已经回收。
 
 如果Activity没有回收，那么是可以操作Activity的API，比如在这个Activity上显示对话框，虽然并看到不到这个Activity。但是跳转回来的时候，会发现他又对话框。
 
-是否可以利用回收的Activity做事情？
+```
+LocationManager mLocationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
+```
 
-用已经回收的Activity显示对话框会 leakwindow （runOnUiThread(Runnable{ new Dialog().show()})）但是程序不会崩溃。
-可以用 leakActivity显示一个Toast
-可以启动 启动一个Activity （startActivity(Intent)）
-可以操作UI
+这算是系统bug，如果我们使用Activity来获取一个系统服务，那么这个服务会持有当前Activity，解决的办法还是 Application Context。
+
+```
+//直接敲的代码，有语法错误，当伪码看吧
+public class MYActivity extends Activity {
+    public static XXXListener listener;
+    
+    public void onCreate(..){
+       ...
+       listener = new XXXListener(){
+           ....
+       }
+    }
+}
+```
+
+这段代码也是我们SDK中的一个例子，XXXListener 的匿名实现引用了外部类 MYActivity ，然而它确是一个静态变量，这样就导致 `MYActivity.listener` 这个静态的变量持有了Activity实例, sigh...
+
+```
+//直接敲的代码，有语法错误，当伪码看吧
+public class MYActivity extends Activity {
+    public void onCreate(..){
+       new Thread( new Runnable(){
+           public void run(){
+              //可以运行一万年的任务
+             ...
+           }
+       }
+       ).start();
+    }
+}
+```
+
+我们在使用AsyncTask、线程、Handler的时候经常犯这个错误，把一个内部类传给了一个需要运行好久的任务，然而这个任务因为是内部类的缘故会持有外部的Activity。大部分时候我们使用匿名内部类都会遇到上面的两种情况，并且出个bug也不自知。。。所以写代码的时候一定要小心内部类。
 
 
+TODO：Fragment也会被泄漏的，但是虽然可以从 Fragment拿到Activity，但是Fragment泄露不会导致Activity被泄漏，可能内部有机制处理吧
 
+## 最小需求
 
-Q4 
+在解决SDK中内存泄漏的时候发现，大部分时候SDK需要的参数是Context而不是Activity，但是我们都传入了Activity实例。而且方法声明没有明确究竟是需要Activity还是Context作为参数，这样的函数写了很多，导致单纯的看代码很难发现问题。
 
-静态引用
-AsyncTask 线程引用
-activity.getSystemService(“”) cause memory leaks 系统服务
-Toast 也会 https://code.google.com/p/android/issues/detail?id=1770
+所以规范很重要，方法声明是Context的函数，千万不要传入Activity，同时方法内部也不要直接持有传入的参数
 
-Q5
+```
+/**
+* 使用的时候也要 foo(context.getApplicationContext())
+*/
+public void foo(Context context ){
+    Context ctx = context.getApplicationContext(); 
+}
+```
+
+需要Activity的地方，把参数声明为Activity
+
+```
+/**
+* 明确告诉调用者，这里需要的是Activity
+*/
+public void foo(Activity activity){
+  //如果需要长期持有Activity，使用弱引用
+}
+```
+
+## 工具
+
+我们SDK之前一直是没有问题，最近出现一堆开发者给我们报内存泄漏的问题，我们的工程师调查完发现，原来他们正在使用一个NB的检测工具 [leakcanary](https://github.com/square/leakcanary),所以我们的问题也暴露了，现在我们的方案是把这款工具加入我们的测试。
+
+另外一个工具是[MAT](http://www.eclipse.org/mat/),[之前](http://ntop001.github.io/2015/04/02/abcd/)有写过。使用leakcanary有时候会把短时间的内存泄漏报出来，比如运行一个3秒钟的线程并持有已经回收的Activity的引用，但是我们写代码的时候知道是可以忍受的。这时候用MAT分析更好一些。
+
+## Activity 和 对话框
+
+以上说的都是在 Android 5.0 上做的实验。
+
+自用：在有显示对话框的Activity中直接关闭Activity是没有问题的，Activity会先关闭对话框再关闭自己。但是如果Activity被系统回收或者是通过其他方式关闭了，会导致Activity的窗口泄漏。
 
 
 
